@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31729.503
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyPlayer.PlayCore", "HyPlayer.PlayCore\HyPlayer.PlayCore.csproj", "{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|ARM = Debug|ARM
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|ARM = Release|ARM
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|ARM.ActiveCfg = Debug|ARM
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|ARM.Build.0 = Debug|ARM
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|ARM64.Build.0 = Debug|ARM64
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|x64.ActiveCfg = Debug|x64
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|x64.Build.0 = Debug|x64
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|x86.ActiveCfg = Debug|x86
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Debug|x86.Build.0 = Debug|x86
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|ARM.ActiveCfg = Release|ARM
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|ARM.Build.0 = Release|ARM
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|ARM64.ActiveCfg = Release|ARM64
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|ARM64.Build.0 = Release|ARM64
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|x64.ActiveCfg = Release|x64
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|x64.Build.0 = Release|x64
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|x86.ActiveCfg = Release|x86
+		{1A1CC9C9-AB54-4A0D-80DF-C958D08DB84D}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E2884B2E-C974-48B6-B85D-9706CE9F0D1A}
+	EndGlobalSection
+EndGlobal
