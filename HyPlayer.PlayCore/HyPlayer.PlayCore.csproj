@@ -123,6 +123,7 @@
   <ItemGroup>
     <Compile Include="Model\MusicProvider.cs" />
     <Compile Include="Model\PlayItem.cs" />
+    <Compile Include="Model\IPlayService.cs" />
     <Compile Include="PlayCore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\HyPlayer.PlayCore.rd.xml" />

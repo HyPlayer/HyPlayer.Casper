@@ -4,37 +4,57 @@ using Windows.UI.Xaml.Media;
 
 namespace HyPlayer.PlayCore.Model
 {
-    public class PlayItem
+    public class PlayableItem
     {
-        public string Id => ProviderId + MusicId;
-        public string ProviderId;
-        public string MusicId;
-        public PlayItemInfo PlayItemInfo;
-    }
-    public class PlayItemInfo
-    {
+        public string Id => ProviderId + PlaySourceType + ActualId;
         public string Name;
+        public string ProviderId;
+        public string PlaySourceType;
+        public string ActualId;
+
+        public PlayableItem(string id)
+        {
+            ProviderId = Id.Substring(0, 3);
+            PlaySourceType = Id.Substring(3, 2);
+            ActualId = Id.Substring(5);
+        }
+
+        public PlayableItem(string providerId, string playSourceType, string actualId)
+        {
+            ProviderId = providerId;
+            PlaySourceType = playSourceType;
+            ActualId = actualId;
+        }
+
+        protected PlayableItem()
+        {
+            
+        }
+    }
+
+    public class SongContainer : PlayableItem
+    {
+        public string Creator;
+        public string CreatorId; // 此处 ID 需要加 ProviderId
+        public string Description;
+    }
+
+    public class SingleSong : PlayableItem
+    {
         public string TranslatedName;
         public string Description;
         public Album Album;
         public List<Artist> Artists;
     }
 
-    public class Album
+    public class Album : SongContainer
     {
-        public string Id => ProviderId + AlbumId;
-        public string ProviderId;
-        public string AlbumId;
-        public string Name;
         public ImageSource CoverImage;
     }
 
     public class Artist
     {
-        public string Id => ProviderId + ArtistId;
-        public string ProviderId;
-        public string ArtistId;
-        public string Name;
+        // Empty
     }
 
     public class SongLyric
