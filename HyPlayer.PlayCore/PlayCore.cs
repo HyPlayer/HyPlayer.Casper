@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HyPlayer.PlayCore.Model;
+using HyPlayer.PlayCore.Service;
 
 namespace HyPlayer.PlayCore
 {
@@ -15,10 +16,10 @@ namespace HyPlayer.PlayCore
         public readonly List<PlayableItem> PlayList = new();
         public SongContainer PlaySource = null;
         public int NowPlayIndex = -1;
-        public readonly PlayStatus PlayStatus = PlayStatus.None;
         public PlayRollMode PlayRollMode = PlayRollMode.DefaultRoll;
         public readonly PlayCoreSettings PlayCoreSettings = new();
         public readonly Random RandomGenerator = new();
+        public readonly PlayService PlayService = null;
 
         #endregion
         #region Basic Public Function
@@ -131,7 +132,7 @@ namespace HyPlayer.PlayCore
         
         public void LoadNowPlayingItemMedia()
         {
-            throw new NotImplementedException();
+            PlayService.Load(MusicProviders[PlayList[NowPlayIndex].ProviderId].GetPlayItemMediaSource(PlayList[NowPlayIndex].Id));
         }
 
         public void SongAppendDone()
@@ -153,13 +154,7 @@ namespace HyPlayer.PlayCore
         public bool AutoSyncSMTC; // 自动同步 SMTC
     }
 
-    public enum PlayStatus
-    {
-        Paused,
-        Playing,
-        Failed,
-        None
-    }
+
 
     public enum PlayRollMode
     {

@@ -123,8 +123,9 @@
   <ItemGroup>
     <Compile Include="Model\MusicProvider.cs" />
     <Compile Include="Model\PlayItem.cs" />
-    <Compile Include="Model\IPlayService.cs" />
     <Compile Include="PlayCore.cs" />
+    <Compile Include="Properties\Annotations.cs" />
+    <Compile Include="Service\PlayService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\HyPlayer.PlayCore.rd.xml" />
   </ItemGroup>
@@ -132,6 +133,9 @@
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.2.12</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Service\PlayServices" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
