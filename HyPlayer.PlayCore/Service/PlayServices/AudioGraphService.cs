@@ -22,7 +22,7 @@ public sealed class AudioGraphService : EffectivePlayService
         if (Math.Abs(_inputNode.Position.TotalMilliseconds - previousPositionMilliseconds) > 0.01)
         {
             Status.Position = _inputNode.Position;
-            Events.RaisePositionChangeEvent();
+            Events.RaisePositionChangedEvent();
         }
     }
 

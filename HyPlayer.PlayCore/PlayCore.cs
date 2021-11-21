@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Windows.Media;
+using Windows.Storage.Streams;
+using Windows.UI.Xaml.Media.Imaging;
 using HyPlayer.PlayCore.Model;
 using HyPlayer.PlayCore.Service;
 using HyPlayer.PlayCore.Service.PlayServices;
 
 namespace HyPlayer.PlayCore
 {
-    public class PlayCore
+    public sealed class PlayCore
     {
         #region Basic Information
 
@@ -21,6 +22,7 @@ namespace HyPlayer.PlayCore
         public readonly PlayCoreSettings PlayCoreSettings = new();
         public readonly Random RandomGenerator = new();
         public readonly PlayService PlayService = null;
+        public readonly SmtcService SmtcService = null;
 
         public static readonly Dictionary<string, PlayService> PlayServices = new()
         {
@@ -30,7 +32,8 @@ namespace HyPlayer.PlayCore
         public readonly PlayServiceEvents Events = new PlayServiceEvents();
 
         #endregion
-
+        
+        
         #region Basic Public Function
 
         public PlayCore()
@@ -40,6 +43,41 @@ namespace HyPlayer.PlayCore
             PlayService = PlayServices[PlayServices.Keys.First()];
             PlayService.InitializeService();
             PlayService.Events = Events;
+            if (PlayCoreSettings.SyncSmtc)
+            {
+                SmtcService = new SmtcService();
+                SmtcService.InitializeService();
+                Events.OnPlayItemChanged += SmtcService.OnPlayItemChanged;
+                Events.OnPlay += SmtcService.OnPlay;
+                Events.OnPause += SmtcService.OnPause;
+                Events.OnStop += SmtcService.OnStop;
+                SmtcService.OnPlayAnother += (next) =>
+                {
+                    if (next) SongMoveNext();
+                    else SongMovePrevious();
+                };
+                SmtcService.OnPlayPositionChanging += position => PlayService.Seek(position);
+                SmtcService.OnPlayStateChanging += (status) =>
+                {
+                    switch (status)
+                    {
+                        case PlayingStatus.Paused:
+                            PlayService.Pause();
+                            break;
+                        case PlayingStatus.Playing:
+                            PlayService.Play();
+                            break;
+                        case PlayingStatus.None:
+                            PlayService.Stop();
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(status), status, null);
+                    }
+                };
+                if (PlayCoreSettings.SyncSmtcTime)
+                    Events.OnPositionChanged += () => SmtcService.OnPlayPositionChanged(PlayService.Status.Position);
+
+            }
         }
 
         public void AppendPlayItem(SingleSong item)
@@ -166,10 +204,9 @@ namespace HyPlayer.PlayCore
 
     public class PlayCoreSettings
     {
-        public bool SyncSMTC; // 同步 SMTC
-        public bool AutoSyncSMTC; // 自动同步 SMTC
+        public bool SyncSmtc; // 同步 SMTC
+        public bool SyncSmtcTime; // 同步 SMTC 的时间属性
     }
-
 
     public enum PlayRollMode
     {

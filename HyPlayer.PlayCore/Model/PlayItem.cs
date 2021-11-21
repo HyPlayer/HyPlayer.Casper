@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Windows.UI.Xaml.Media;
+using System.Linq;
+using Windows.Storage.Streams;
+using Windows.UI.Xaml.Media.Imaging;
 
 namespace HyPlayer.PlayCore.Model
 {
@@ -46,14 +48,17 @@ namespace HyPlayer.PlayCore.Model
         public string Description;
         public Album Album;
         public List<Artist> Artists;
+        public TimeSpan Duration;
+        public string ArtistsString => string.Join(" / ", Artists.Select(t => t.Name));
     }
 
-    public class Album : SongContainer
+    public abstract class Album : SongContainer
     {
-        public ImageSource CoverImage;
+        public abstract BitmapImage GetCoverImage();
+        public abstract IRandomAccessStream GetCoverImageStream();
     }
 
-    public class Artist
+    public class Artist : PlayableItem
     {
         // Empty
     }

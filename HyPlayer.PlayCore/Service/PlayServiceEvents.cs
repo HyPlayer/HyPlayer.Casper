@@ -8,7 +8,7 @@ public class PlayServiceEvents
     public delegate void PauseEvent();
     public delegate void StopEvent();
     public delegate void FailedEvent();
-    public delegate void PositionChangeEvent();
+    public delegate void PositionChangedEvent();
     public delegate void MediaEndEvent();
     public delegate void MediaLoadedEvent();
     public delegate bool PlayItemChangingEvent(SingleSong newPlayableItem, SingleSong oldPlayableItem);
@@ -19,7 +19,7 @@ public class PlayServiceEvents
     public event PauseEvent OnPause;
     public event StopEvent OnStop;
     public event FailedEvent OnFailed;
-    public event PositionChangeEvent OnPositionChange;
+    public event PositionChangedEvent OnPositionChanged;
     public event MediaEndEvent OnMediaEnd;
     public event MediaEndEvent OnMediaLoaded;
     public event PlayItemChangingEvent OnPlayItemChanging;
@@ -31,7 +31,7 @@ public class PlayServiceEvents
     public void RaisePauseEvent() => OnPause?.Invoke();
     public void RaiseStopEvent() => OnStop?.Invoke();
     public void RaiseFailedEvent() => OnFailed?.Invoke();
-    public void RaisePositionChangeEvent() => OnPositionChange?.Invoke();
+    public void RaisePositionChangedEvent() => OnPositionChanged?.Invoke();
     public void RaiseMediaEndEvent() => OnMediaEnd?.Invoke();
     public void RaiseMediaLoadedEvent() => OnMediaLoaded?.Invoke();
     public void RaisePlayItemChangingEvent(SingleSong newItem,SingleSong oldItem) => OnPlayItemChanging?.Invoke(newItem,oldItem);

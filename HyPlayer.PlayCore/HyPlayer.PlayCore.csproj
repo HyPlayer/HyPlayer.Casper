@@ -129,6 +129,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\PlayServiceEvents.cs" />
     <Compile Include="Service\PlayServices\AudioGraphService.cs" />
+    <Compile Include="Service\SmtcService.cs" />
     <EmbeddedResource Include="Properties\HyPlayer.PlayCore.rd.xml" />
   </ItemGroup>
   <ItemGroup>
