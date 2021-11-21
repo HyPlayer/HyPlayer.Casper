@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using HyPlayer.PlayCore.Model;
 using HyPlayer.PlayCore.Service;
+using HyPlayer.PlayCore.Service.PlayServices;
 
 namespace HyPlayer.PlayCore
 {
@@ -13,7 +14,7 @@ namespace HyPlayer.PlayCore
         #region Basic Information
 
         public readonly Dictionary<string, IMusicProvider> MusicProviders = new();
-        public readonly List<PlayableItem> PlayList = new();
+        public readonly List<SingleSong> PlayList = new();
         public SongContainer PlaySource = null;
         public int NowPlayIndex = -1;
         public PlayRollMode PlayRollMode = PlayRollMode.DefaultRoll;
@@ -21,30 +22,47 @@ namespace HyPlayer.PlayCore
         public readonly Random RandomGenerator = new();
         public readonly PlayService PlayService = null;
 
+        public static readonly Dictionary<string, PlayService> PlayServices = new()
+        {
+            { "AudioGraph", new AudioGraphService() }
+        };
+
+        public readonly PlayServiceEvents Events = new PlayServiceEvents();
+
         #endregion
+
         #region Basic Public Function
 
-        public void AppendPlayItem(PlayableItem item)
+        public PlayCore()
+        {
+            // Select PlayService
+            // TODO: Allow User To Select Which Service To Use
+            PlayService = PlayServices[PlayServices.Keys.First()];
+            PlayService.InitializeService();
+            PlayService.Events = Events;
+        }
+
+        public void AppendPlayItem(SingleSong item)
         {
             PlayList.Add(item);
         }
 
-        public void InsertPlayItem(PlayableItem item, int index)
+        public void InsertPlayItem(SingleSong item, int index)
         {
             PlayList.Insert(index, item);
         }
 
-        public void InsertPlayItemToNext(PlayableItem item)
+        public void InsertPlayItemToNext(SingleSong item)
         {
             PlayList.Insert(NowPlayIndex, item);
         }
 
-        public void InsertPlayItemRange(IEnumerable<PlayableItem> items, int index)
+        public void InsertPlayItemRange(IEnumerable<SingleSong> items, int index)
         {
             PlayList.InsertRange(index, items);
         }
 
-        public void AppendPlayItemRange(IEnumerable<PlayableItem> items)
+        public void AppendPlayItemRange(IEnumerable<SingleSong> items)
         {
             PlayList.AddRange(items);
         }
@@ -55,6 +73,7 @@ namespace HyPlayer.PlayCore
             if (PlayList.Count - 1 == 0)
             {
                 RemoveAllSong();
+                PlayService.Stop();
                 return;
             }
 
@@ -129,20 +148,17 @@ namespace HyPlayer.PlayCore
         {
             PlaySource = playSource;
         }
-        
+
         public void LoadNowPlayingItemMedia()
         {
-            PlayService.Load(MusicProviders[PlayList[NowPlayIndex].ProviderId].GetPlayItemMediaSource(PlayList[NowPlayIndex].Id));
-        }
-
-        public void SongAppendDone()
-        {
-            throw new NotImplementedException();
+            PlayService.Load(MusicProviders[PlayList[NowPlayIndex].ProviderId]
+                .GetPlayItemMediaSource(PlayList[NowPlayIndex].InProviderId));
         }
 
         public void LoadPlaySource()
         {
-            throw new NotImplementedException();
+            RemoveAllSong();
+            AppendPlayItemRange(MusicProviders[PlaySource.ProviderId].GetPlayItems(PlaySource.InProviderId).Cast<SingleSong>());
         }
 
         #endregion
@@ -153,7 +169,6 @@ namespace HyPlayer.PlayCore
         public bool SyncSMTC; // 同步 SMTC
         public bool AutoSyncSMTC; // 自动同步 SMTC
     }
-
 
 
     public enum PlayRollMode

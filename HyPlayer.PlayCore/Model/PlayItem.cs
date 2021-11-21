@@ -7,6 +7,7 @@ namespace HyPlayer.PlayCore.Model
     public class PlayableItem
     {
         public string Id => ProviderId + PlaySourceType + ActualId;
+        public string InProviderId => PlaySourceType + ActualId;
         public string Name;
         public string ProviderId;
         public string PlaySourceType;

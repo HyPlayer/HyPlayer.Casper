@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using Windows.Media.Audio;
 using Windows.Media.Core;
 using HyPlayer.PlayCore.Annotations;
-using HyPlayer.PlayCore.Model;
 
 namespace HyPlayer.PlayCore.Service
 {
@@ -12,10 +11,13 @@ namespace HyPlayer.PlayCore.Service
     {
         public string Id;
         public string Name;
+        public bool Available;
+        public string LastError; // Win32 时代的产物
         public PlayServiceAbility Abilities;
         public PlayServiceEvents Events;
         public PlayServiceStatus Status;
 
+        public abstract void InitializeService();
         public abstract void Load(MediaSource mediaSource);
         public abstract void Play();
         public abstract void Pause();
@@ -25,6 +27,15 @@ namespace HyPlayer.PlayCore.Service
         public abstract void ChangeVolume(int volume);
         public abstract void ChangePlaybackRate(int rate);
         public abstract void SwitchBackground();
+    }
+
+    public abstract class EffectivePlayService : PlayService // 这个命名好好想想
+    {
+        public EchoEffectDefinition EchoEffectDefinition;
+        public ReverbEffectDefinition ReverbEffectDefinition;
+        public EqualizerEffectDefinition EqEffectDefinition;
+        public LimiterEffectDefinition LimiterEffectDefinition;
+        public abstract void InitializeEffect();
     }
 
     public class PlayServiceAbility
@@ -38,25 +49,6 @@ namespace HyPlayer.PlayCore.Service
         public bool ChangePlaybackRate; // 更改倍速
         public bool PlayBackground; // 后台播放
         public bool ChangeOutputDevice; // 更改输出设备
-    }
-
-    public class PlayServiceEvents
-    {
-        public delegate void PlayEvent();
-
-        public delegate void PauseEvent();
-
-        public delegate void FailedEvent();
-
-        public delegate void PositionChangeEvent();
-
-        public delegate void MediaEndEvent();
-
-        public delegate void PlayItemChangeEvent(PlayableItem newPlayableItem, PlayableItem oldPlayableItem);
-
-        public delegate void PlayItemAddedEvent();
-
-        public delegate void PlayItemRemovedEvent();
     }
 
     public enum PlayingStatus
@@ -86,6 +78,16 @@ namespace HyPlayer.PlayCore.Service
             set
             {
                 _position = value;
+                OnPropertyChanged();
+            }
+        }
+        
+        public TimeSpan Duration
+        {
+            get => _duration;
+            set
+            {
+                _duration = value;
                 OnPropertyChanged();
             }
         }
@@ -125,11 +127,7 @@ namespace HyPlayer.PlayCore.Service
         private int _volume;
         private bool _buffering;
         private int _playbackRate;
-
-        public void UpdatePlayingStatus(PlayingStatus playingStatus)
-        {
-            _playStatus = playingStatus;
-        }
+        private TimeSpan _duration;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
