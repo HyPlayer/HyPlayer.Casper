@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Windows.Media;
-using Windows.Storage.Streams;
-using Windows.UI.Xaml.Media.Imaging;
 using HyPlayer.PlayCore.Model;
 using HyPlayer.PlayCore.Service;
 using HyPlayer.PlayCore.Service.PlayServices;
