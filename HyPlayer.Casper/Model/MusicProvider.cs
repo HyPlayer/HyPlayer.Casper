@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Windows.Media.Core;
 
-namespace HyPlayer.PlayCore.Model
+namespace HyPlayer.Casper.Model
 {
     public interface IMusicProvider
     {

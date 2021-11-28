@@ -4,7 +4,7 @@ using System.Linq;
 using Windows.Storage.Streams;
 using Microsoft.UI.Xaml.Media.Imaging;
 
-namespace HyPlayer.PlayCore.Model
+namespace HyPlayer.Casper.Model
 {
     public class PlayableItem
     {

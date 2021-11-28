@@ -5,7 +5,7 @@ using Windows.Media.Audio;
 using Windows.Media.Core;
 using Windows.Media.Render;
 
-namespace HyPlayer.PlayCore.Service.PlayServices;
+namespace HyPlayer.Casper.Service.PlayServices;
 
 public sealed class AudioGraphService : EffectivePlayService
 {

@@ -3,9 +3,9 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Windows.Media.Audio;
 using Windows.Media.Core;
-using HyPlayer.PlayCore.Annotations;
+using HyPlayer.Casper.Properties;
 
-namespace HyPlayer.PlayCore.Service
+namespace HyPlayer.Casper.Service
 {
     public abstract class PlayService
     {

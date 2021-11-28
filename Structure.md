@@ -10,7 +10,7 @@
 
 在进行 `WinUI 3` 重构之际, 再次进行大重构.
 
-Meet `HyPlayer.PlayCore`
+Meet `HyPlayer.Casper`
 
 ## 概念
 

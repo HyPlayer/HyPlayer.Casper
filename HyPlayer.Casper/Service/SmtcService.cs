@@ -1,9 +1,9 @@
 ﻿using System;
 using Windows.Media;
 using Windows.Storage.Streams;
-using HyPlayer.PlayCore.Model;
+using HyPlayer.Casper.Model;
 
-namespace HyPlayer.PlayCore.Service;
+namespace HyPlayer.Casper.Service;
 
 public class SmtcService
 {

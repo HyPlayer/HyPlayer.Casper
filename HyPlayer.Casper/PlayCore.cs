@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyPlayer.PlayCore.Model;
-using HyPlayer.PlayCore.Service;
-using HyPlayer.PlayCore.Service.PlayServices;
+using HyPlayer.Casper.Model;
+using HyPlayer.Casper.Service;
+using HyPlayer.Casper.Service.PlayServices;
 
-namespace HyPlayer.PlayCore
+namespace HyPlayer.Casper
 {
-    public sealed class PlayCore
+    public sealed class PlayerCore
     {
         #region Basic Information
 
@@ -33,7 +33,7 @@ namespace HyPlayer.PlayCore
         
         #region Basic Public Function
 
-        public PlayCore()
+        public PlayerCore()
         {
             // Select PlayService
             // TODO: Allow User To Select Which Service To Use
