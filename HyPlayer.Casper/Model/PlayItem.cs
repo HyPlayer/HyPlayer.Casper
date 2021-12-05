@@ -1,82 +1,91 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Windows.Storage.Streams;
 using Microsoft.UI.Xaml.Media.Imaging;
 
-namespace HyPlayer.Casper.Model
+namespace HyPlayer.Casper.Model;
+
+public class ProvidableItem
 {
-    public class PlayableItem
+    public string ActualId;
+    public string Name;
+    public string PlaySourceType;
+    public string ProviderId;
+
+    public ProvidableItem(string id)
     {
-        public string Id => ProviderId + PlaySourceType + ActualId;
-        public string InProviderId => PlaySourceType + ActualId;
-        public string Name;
-        public string ProviderId;
-        public string PlaySourceType;
-        public string ActualId;
-
-        public PlayableItem(string id)
-        {
-            ProviderId = Id.Substring(0, 3);
-            PlaySourceType = Id.Substring(3, 2);
-            ActualId = Id.Substring(5);
-        }
-
-        public PlayableItem(string providerId, string playSourceType, string actualId)
-        {
-            ProviderId = providerId;
-            PlaySourceType = playSourceType;
-            ActualId = actualId;
-        }
-
-        protected PlayableItem()
-        {
-            
-        }
+        ProviderId = Id.Substring(0, 3);
+        PlaySourceType = Id.Substring(3, 2);
+        ActualId = Id.Substring(5);
     }
 
-    public class SongContainer : PlayableItem
+    public ProvidableItem(string providerId, string playSourceType, string actualId)
     {
-        public string Creator;
-        public string CreatorId; // 此处 ID 需要加 ProviderId
-        public string Description;
+        ProviderId = providerId;
+        PlaySourceType = playSourceType;
+        ActualId = actualId;
     }
 
-    public class SingleSong : PlayableItem
+    protected ProvidableItem()
     {
-        public string TranslatedName;
-        public string Description;
-        public Album Album;
-        public List<Artist> Artists;
-        public TimeSpan Duration;
-        public string ArtistsString => string.Join(" / ", Artists.Select(t => t.Name));
     }
 
-    public abstract class Album : SongContainer
-    {
-        public abstract BitmapImage GetCoverImage();
-        public abstract IRandomAccessStream GetCoverImageStream();
-    }
+    public string Id => ProviderId + PlaySourceType + ActualId;
+    public string InProviderId => PlaySourceType + ActualId;
+}
 
-    public class Artist : PlayableItem
-    {
-        // Empty
-    }
+public class SongContainer : ProvidableItem
+{
+    public string Creator;
+    public string CreatorId; // 此处 ID 需要加 ProviderId
+    public string Description;
+    public PlayListSourceType PlayListSourceType;
+}
 
-    public class SongLyric
-    {
-        public static SongLyric PureSong = new SongLyric
-            { HaveTranslation = false, LyricTime = TimeSpan.Zero, PureLyric = "纯音乐 请欣赏" };
+public class SingleSong : ProvidableItem
+{
+    public Album Album;
+    public List<Artist> Artists;
+    public bool Available;
+    public string Description;
+    public TimeSpan Duration;
+    public string TranslatedName;
+    public string ArtistsString => string.Join(" / ", Artists.Select(t => t.Name));
+}
 
-        public static SongLyric NoLyric = new SongLyric
-            { HaveTranslation = false, LyricTime = TimeSpan.Zero, PureLyric = "无歌词 请欣赏" };
+public abstract class Album : SongContainer
+{
+    public string PicUrl;
+    public abstract Task<BitmapImage> GetCoverImage(int picSizeX = -1, int picSizeY = -1);
+    public abstract Task<IRandomAccessStream> GetCoverImageStream(int picSizeX = -1, int picSizeY = -1);
+}
 
-        public static SongLyric LoadingLyric = new SongLyric
-            { HaveTranslation = false, LyricTime = TimeSpan.Zero, PureLyric = "加载歌词中..." };
+public class Artist : ProvidableItem
+{
+    // Empty
+}
 
-        public bool HaveTranslation;
-        public TimeSpan LyricTime;
-        public string PureLyric;
-        public string Translation;
-    }
+public class SongLyric
+{
+    public static SongLyric PureSong = new()
+        { HaveTranslation = false, LyricTime = TimeSpan.Zero, PureLyric = "纯音乐 请欣赏" };
+
+    public static SongLyric NoLyric = new()
+        { HaveTranslation = false, LyricTime = TimeSpan.Zero, PureLyric = "无歌词 请欣赏" };
+
+    public static SongLyric LoadingLyric = new()
+        { HaveTranslation = false, LyricTime = TimeSpan.Zero, PureLyric = "加载歌词中..." };
+
+    public bool HaveTranslation;
+    public TimeSpan LyricTime;
+    public string PureLyric;
+    public string Translation;
+}
+
+public enum PlayListSourceType
+{
+    Liner,
+    Interactive // 用于私人 FM 之类的场景, 播放列表并不确定, 需要在播放时更新
 }

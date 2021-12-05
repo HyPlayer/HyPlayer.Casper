@@ -7,24 +7,23 @@ namespace HyPlayer.Casper.Service;
 
 public class SmtcService
 {
+    public delegate void PlayAnotherEvent(bool isNext);
+
+    public delegate void PlayPositionChangingEvent(TimeSpan position);
+
+    public delegate void PlayStateChangingEvent(PlayingStatus status);
+
+    public readonly SystemMediaTransportControlsTimelineProperties TimelineProperties = new();
+
     public SystemMediaTransportControls Smtc;
     public SystemMediaTransportControlsDisplayUpdater Updater;
 
-    public readonly SystemMediaTransportControlsTimelineProperties TimelineProperties =
-        new SystemMediaTransportControlsTimelineProperties();
-    
-    public delegate void PlayStateChangingEvent(PlayingStatus status);
-
     public event PlayStateChangingEvent OnPlayStateChanging;
-    
-    public delegate void PlayAnotherEvent(bool isNext);
 
     public event PlayAnotherEvent OnPlayAnother;
-    
-    public delegate void PlayPositionChangingEvent(TimeSpan position);
 
     public event PlayPositionChangingEvent OnPlayPositionChanging;
-    
+
 
     public void InitializeService()
     {
@@ -55,7 +54,8 @@ public class SmtcService
                     throw new ArgumentOutOfRangeException();
             }
         };
-        Smtc.PlaybackPositionChangeRequested += (_, args) => OnPlayPositionChanging?.Invoke(args.RequestedPlaybackPosition);
+        Smtc.PlaybackPositionChangeRequested +=
+            (_, args) => OnPlayPositionChanging?.Invoke(args.RequestedPlaybackPosition);
     }
 
     public void OnPlayPositionChanged(TimeSpan timeSpan)
@@ -63,14 +63,14 @@ public class SmtcService
         TimelineProperties.Position = timeSpan;
     }
 
-    public void OnPlayItemChanged(SingleSong newItem, SingleSong previousItem)
+    public async void OnPlayItemChanged(SingleSong newItem, SingleSong previousItem)
     {
         Smtc.IsEnabled = true;
         Updater.MusicProperties.Title = newItem.Name;
         Updater.MusicProperties.Artist = newItem.ArtistsString;
         Updater.MusicProperties.AlbumTitle = newItem.Album.Name;
         TimelineProperties.MaxSeekTime = newItem.Duration;
-        Updater.Thumbnail = RandomAccessStreamReference.CreateFromStream(newItem.Album.GetCoverImageStream());
+        Updater.Thumbnail = RandomAccessStreamReference.CreateFromStream(await newItem.Album.GetCoverImageStream());
     }
 
     public void OnPlay()

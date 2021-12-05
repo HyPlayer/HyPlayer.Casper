@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Timers;
 using Windows.Media.Audio;
 using Windows.Media.Core;
@@ -9,24 +10,6 @@ namespace HyPlayer.Casper.Service.PlayServices;
 
 public sealed class AudioGraphService : EffectivePlayService
 {
-    private AudioGraph _graph;
-    private AudioDeviceOutputNode _outputNode;
-    private MediaSourceAudioInputNode _inputNode;
-    private readonly Timer _timer = new Timer(500);
-    private double previousPositionMilliseconds = Double.Epsilon;
-
-
-    private void TimerOnElapsed(object sender, ElapsedEventArgs e)
-    {
-        // 检测进度变更
-        if (Math.Abs(_inputNode.Position.TotalMilliseconds - previousPositionMilliseconds) > 0.01)
-        {
-            Status.Position = _inputNode.Position;
-            Events.RaisePositionChangedEvent();
-        }
-    }
-
-
     private static readonly Dictionary<AudioGraphCreationStatus, string> AudioGraphCreationStatusStrings =
         new()
         {
@@ -56,12 +39,29 @@ public sealed class AudioGraphService : EffectivePlayService
                 { MediaSourceAudioInputNodeCreationStatus.FormatNotSupported, "格式不支持" }
             };
 
+    private readonly Timer _timer = new(500);
+    private AudioGraph _graph;
+    private MediaSourceAudioInputNode _inputNode;
+    private AudioDeviceOutputNode _outputNode;
+    private readonly double previousPositionMilliseconds = double.Epsilon;
+
+
+    private void TimerOnElapsed(object sender, ElapsedEventArgs e)
+    {
+        // 检测进度变更
+        if (Math.Abs(_inputNode.Position.TotalMilliseconds - previousPositionMilliseconds) > 0.01)
+        {
+            Status.Position = _inputNode.Position;
+            Events.RaisePositionChangedEvent();
+        }
+    }
+
 
     private async void CreateAudioGraph()
     {
         // Create Audio Graph By Using The Default
-        AudioGraphSettings settings = new AudioGraphSettings(AudioRenderCategory.Media);
-        CreateAudioGraphResult result = await AudioGraph.CreateAsync(settings);
+        var settings = new AudioGraphSettings(AudioRenderCategory.Media);
+        var result = await AudioGraph.CreateAsync(settings);
         if (result.Status != AudioGraphCreationStatus.Success)
         {
             Available = false;
@@ -70,7 +70,7 @@ public sealed class AudioGraphService : EffectivePlayService
         }
 
         _graph = result.Graph;
-        CreateAudioDeviceOutputNodeResult outputDeviceNodeResult = await _graph.CreateDeviceOutputNodeAsync();
+        var outputDeviceNodeResult = await _graph.CreateDeviceOutputNodeAsync();
         if (outputDeviceNodeResult.Status != AudioDeviceNodeCreationStatus.Success)
         {
             Available = false;
@@ -79,6 +79,8 @@ public sealed class AudioGraphService : EffectivePlayService
         }
 
         _outputNode = outputDeviceNodeResult.DeviceOutputNode;
+        InitializeEffect();
+        _graph.Start();
     }
 
     public override void InitializeService()
@@ -105,46 +107,48 @@ public sealed class AudioGraphService : EffectivePlayService
         };
         _timer.Elapsed += TimerOnElapsed;
         CreateAudioGraph();
-        InitializeEffect();
     }
 
-    public override async void Load(MediaSource mediaSource)
+    public override async Task<bool> Load(MediaSource mediaSource)
     {
         if (mediaSource == null)
         {
             // 传入 Null 值默认为释放当前播放并返回
-            _graph.Stop();
             _inputNode.Dispose();
-            return;
+            return false;
         }
 
         if (_inputNode != null)
-        {
             // 如果 InputNode 已经有过, 需要将其释放
             // 如果上一个文件正在播放需要将其停止
-            _graph.Stop();
             _inputNode.Dispose();
-        }
+
         Status.Buffering = true;
+        Status.PlayStatus = PlayingStatus.Loading;
         var res = await _graph.CreateMediaSourceAudioInputNodeAsync(mediaSource);
         if (res.Status != MediaSourceAudioInputNodeCreationStatus.Success)
         {
             LastError = MediaSourceAudioInputNodeCreationStatusStrings[res.Status];
+            Status.PlayStatus = PlayingStatus.Failed;
             Events.RaiseFailedEvent();
-            return;
+            return false;
         }
 
         _inputNode = res.Node;
+        _inputNode.Stop();
         _inputNode.AddOutgoingConnection(_outputNode);
         _inputNode.MediaSourceCompleted += (_, _) => Events.RaiseMediaEndEvent();
         Status.Buffering = false;
+        Status.PlayStatus = PlayingStatus.Loaded;
         Events.RaiseMediaLoadedEvent();
+        return true;
     }
 
     public override void Play()
     {
         _inputNode.Start();
         Status.PlayStatus = PlayingStatus.Playing;
+        _timer.Start();
         Events.RaisePlayEvent();
     }
 
@@ -152,12 +156,15 @@ public sealed class AudioGraphService : EffectivePlayService
     {
         _inputNode.Stop();
         Status.PlayStatus = PlayingStatus.Paused;
+        _timer.Stop();
         Events.RaisePauseEvent();
     }
+
     public override void Stop()
     {
         _inputNode.Reset();
         Status.PlayStatus = PlayingStatus.None;
+        _timer.Stop();
         Events.RaiseStopEvent();
     }
 
@@ -198,7 +205,7 @@ public sealed class AudioGraphService : EffectivePlayService
         // Code From AudioCreation by Microsoft
         // https://github.com/microsoft/Windows-universal-samples/tree/main/Samples/AudioCreation
         // LICENCED by MIT
-        
+
         // create echo effect
         EchoEffectDefinition = new EchoEffectDefinition(_graph)
         {
@@ -236,12 +243,12 @@ public sealed class AudioGraphService : EffectivePlayService
         };
 
         _outputNode.EffectDefinitions.Add(LimiterEffectDefinition);
-
+        _outputNode.DisableEffectsByDefinition(LimiterEffectDefinition);
 
 
         // See the MSDN page for parameter explanations
         // https://msdn.microsoft.com/en-us/library/windows/desktop/microsoft.directx_sdk.xapofx.fxeq_parameters(v=vs.85).aspx
-        EqEffectDefinition = new(_graph);
+        EqEffectDefinition = new EqualizerEffectDefinition(_graph);
         EqEffectDefinition.Bands[0].FrequencyCenter = 100.0f;
         EqEffectDefinition.Bands[0].Gain = 4f;
         EqEffectDefinition.Bands[0].Bandwidth = 1.5f;

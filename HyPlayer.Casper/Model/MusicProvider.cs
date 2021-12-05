@@ -1,31 +1,33 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Windows.Media.Core;
 
-namespace HyPlayer.Casper.Model
-{
-    public interface IMusicProvider
-    {
-        public string Id { get; }
-        public string Name { get; }
-        public MusicProviderSettings Settings { get; }
-        public PlayableItem GetPlayItem(string id);
-        public MediaSource GetPlayItemMediaSource(string id);
-        public List<PlayableItem> GetPlayItems(string id);
-        public string GetPlayItemLyric(string id);
-    }
+namespace HyPlayer.Casper.Model;
 
-    public interface IOnlineMusicProvider : IMusicProvider
-    {
-        public string GetPlayItemTranslatedLyric(string id);
-    }
-    
-    public class MusicProviderSettings
-    {
-        public MusicProviderSupports Supports;
-    }
-    
-    public class MusicProviderSupports
-    {
-        public Dictionary<string, string> ListMusicSourceTypes; // TypeId, Name
-    }
+public interface IMusicProvider
+{
+    public string ProviderId { get; }
+    public string ProviderName { get; }
+    public MusicProviderSettings ProviderSettings { get; }
+    public Task<ProvidableItem> GetPlayItem(string inProviderId);
+    public Task<MediaSource> GetPlayItemMediaSource(string inProviderId);
+    public Task<List<SingleSong>> GetPlayListItems(string inProviderId);
+
+    public Task<SingleSong> GetPlayListNextItem(string inProviderId);
+    public Task<string> GetPlayItemLyric(string inProviderId);
+}
+
+public interface IOnlineMusicProvider : IMusicProvider
+{
+    public Task<string> GetPlayItemTranslatedLyric(string inProviderId);
+}
+
+public class MusicProviderSettings
+{
+    public MusicProviderSupports Supports;
+}
+
+public class MusicProviderSupports
+{
+    public Dictionary<string, string> ListMusicSourceTypes; // TypeId, Name
 }
