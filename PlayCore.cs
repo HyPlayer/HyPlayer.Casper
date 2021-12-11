@@ -174,8 +174,8 @@ public sealed class PlayCore : INotifyPropertyChanged
             Events.OnStop += SmtcService.OnStop;
             SmtcService.OnPlayAnother += next =>
             {
-                if (next) MoveNext();
-                else MovePrevious();
+                if (next) this.MoveNextAndPlay();
+                else this.MovePreviousAndPlay();
             };
             SmtcService.OnPlayPositionChanging += position => PlayService.Seek(position);
             SmtcService.OnPlayStateChanging += status =>
