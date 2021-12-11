@@ -7,6 +7,8 @@ using Windows.Devices.Enumeration;
 using Windows.Media.Audio;
 using Windows.Media.Core;
 using HyPlayer.Casper.Annotations;
+using Microsoft.UI.Xaml;
+using Windows.UI.Core;
 
 namespace HyPlayer.Casper.Service;
 
@@ -80,6 +82,7 @@ public class PlayServiceStatus : INotifyPropertyChanged
     private PlayingStatus _playStatus;
     private TimeSpan _position;
     private int _volume;
+    public Window MainWindow;
 
     public PlayingStatus PlayStatus
     {
@@ -149,7 +152,7 @@ public class PlayServiceStatus : INotifyPropertyChanged
     [NotifyPropertyChangedInvocator]
     protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        _ = MainWindow?.DispatcherQueue.TryEnqueue(() => { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); });
     }
 
     public delegate void VolumeChangedEventHandler(int volume);

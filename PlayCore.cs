@@ -1,7 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Core;
+using Windows.UI.Core;
+using Windows.UI.Xaml;
+using HyPlayer.Casper.Annotations;
 using HyPlayer.Casper.Model;
 using HyPlayer.Casper.Service;
 using HyPlayer.Casper.Service.PlayServices;
@@ -9,7 +15,7 @@ using Microsoft.UI.Xaml;
 
 namespace HyPlayer.Casper;
 
-public sealed class PlayCore : DependencyObject
+public sealed class PlayCore : INotifyPropertyChanged
 {
     #region Basic Information
 
@@ -26,29 +32,50 @@ public sealed class PlayCore : DependencyObject
     /// <summary>
     ///     播放列表来源
     /// </summary>
+    private SongContainer _playListSource;
+
     public SongContainer PlayListSource
     {
-        get => (SongContainer)GetValue(PlayListSourceProperty);
-        set => SetValue(PlayListSourceProperty, value);
+        get => _playListSource;
+        set
+        {
+            _playListSource = value;
+            OnPropertyChanged();
+        }
     }
+
+    private int _nowPlayingIndex = -1;
 
     /// <summary>
     ///     当前播放指针
     /// </summary>
     public int NowPlayIndex
     {
-        get => (int)GetValue(NowPlayIndexProperty);
-        set => SetValue(NowPlayIndexProperty, value);
+        get => _nowPlayingIndex;
+        set
+        {
+            if (value == _nowPlayingIndex) return;
+            _nowPlayingIndex = value;
+            OnPropertyChanged();
+        }
     }
+
+    private PlayRollMode _playRollMode = PlayRollMode.DefaultRoll;
 
     /// <summary>
     ///     播放模式
     /// </summary>
     public PlayRollMode PlayRollingMode
     {
-        get => (PlayRollMode)GetValue(PlayRollingModeProperty);
-        set => SetValue(PlayRollingModeProperty, value);
+        get => _playRollMode;
+        set
+        {
+            _playRollMode = value;
+            OnPropertyChanged();
+        }
     }
+
+    private bool _playListChangedIndicator;
 
     /// <summary>
     ///     播放列表变化指示器
@@ -57,8 +84,27 @@ public sealed class PlayCore : DependencyObject
     /// </summary>
     public bool PlayListChangedIndicator
     {
-        get => (bool)GetValue(PlayListChangedIndicatorProperty);
-        set => SetValue(PlayListChangedIndicatorProperty, value);
+        get => _playListChangedIndicator;
+        private set
+        {
+            _playListChangedIndicator = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private SingleSong _nowPlayingSong;
+
+    /// <summary>
+    ///     当前播放歌曲
+    /// </summary>
+    public SingleSong NowPlayingSong
+    {
+        get => _nowPlayingSong;
+        private set
+        {
+            _nowPlayingSong = value;
+            OnPropertyChanged();
+        }
     }
 
     /// <summary>
@@ -81,14 +127,17 @@ public sealed class PlayCore : DependencyObject
     /// </summary>
     public readonly SmtcService SmtcService;
 
-    /// <summary>
-    ///     当前播放歌曲
-    /// </summary>
-    public SingleSong NowPlayingSong
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    [NotifyPropertyChangedInvocator]
+    private void OnPropertyChanged([CallerMemberName] string propertyName = null)
     {
-        get => (SingleSong)GetValue(NowPlayingSongProperty);
-        set => SetValue(NowPlayingSongProperty, value);
+        _ = MainWindow?.DispatcherQueue.TryEnqueue(() => { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); });
     }
+
+    public Window MainWindow;
+
 
     public static readonly Dictionary<string, PlayService> PlayServices = new()
     {
@@ -99,33 +148,16 @@ public sealed class PlayCore : DependencyObject
 
     #endregion
 
-    #region Dependency Properties
-
-    public static readonly DependencyProperty PlayListSourceProperty = DependencyProperty.Register(
-        "PlayListSource", typeof(SongContainer), typeof(PlayCore), new PropertyMetadata(default(SongContainer)));
-
-    public static readonly DependencyProperty NowPlayIndexProperty = DependencyProperty.Register(
-        "NowPlayIndex", typeof(int), typeof(PlayCore), new PropertyMetadata(-1));
-
-    public static readonly DependencyProperty PlayRollingModeProperty = DependencyProperty.Register(
-        "PlayRollingMode", typeof(PlayRollMode), typeof(PlayCore), new PropertyMetadata(default(PlayRollMode)));
-
-    public static readonly DependencyProperty NowPlayingSongProperty = DependencyProperty.Register(
-        "NowPlayingSong", typeof(SingleSong), typeof(PlayCore), new PropertyMetadata(default(SingleSong)));
-
-    public static readonly DependencyProperty PlayListChangedIndicatorProperty = DependencyProperty.Register(
-        "PlayListChangedIndicator", typeof(bool), typeof(PlayCore), new PropertyMetadata(default(bool)));
-
-    #endregion
-
     #region Basic Public Function
 
-    public PlayCore(IntPtr windowHandle)
+    public PlayCore(Window window)
     {
+        MainWindow = window;
         // Select PlayService
         // TODO: Allow User To Select Which Service To Use
         PlayService = PlayServices[PlayServices.Keys.First()];
         PlayService.InitializeService();
+        PlayService.Status.MainWindow = MainWindow;
         PlayService.Events = Events;
 #if DEBUG
         if (true)
@@ -134,6 +166,7 @@ public sealed class PlayCore : DependencyObject
 #endif
         {
             SmtcService = new SmtcService();
+            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(window);
             SmtcService.InitializeService(windowHandle);
             Events.OnPlayItemChanged += SmtcService.OnPlayItemChanged;
             Events.OnPlay += SmtcService.OnPlay;
@@ -241,7 +274,9 @@ public sealed class PlayCore : DependencyObject
 
         if (index == NowPlayIndex)
         {
+            var oldItem = PlayList[index];
             PlayList.RemoveAt(index);
+            Events.RaisePlayItemChangedEvent(NowPlayingSong, oldItem);
             _ = LoadNowPlayingItemMedia();
         }
         else if (index < NowPlayIndex)
@@ -308,8 +343,10 @@ public sealed class PlayCore : DependencyObject
     public void MoveTo(int index)
     {
         if (index < 0 || PlayList.Count <= index) return;
+        var oldItem = PlayList[index];
         NowPlayIndex = index;
         NowPlayingSong = PlayList[NowPlayIndex];
+        Events.RaisePlayItemChangedEvent(NowPlayingSong, oldItem);
     }
 
     /// <summary>
