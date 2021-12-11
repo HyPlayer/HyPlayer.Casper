@@ -65,12 +65,19 @@ public class SmtcService
 
     public async void OnPlayItemChanged(SingleSong newItem, SingleSong previousItem)
     {
+        Smtc.IsPlayEnabled = true;
+        Smtc.IsPauseEnabled = true;
+        Smtc.IsNextEnabled = true;
+        Smtc.IsPreviousEnabled = true;
         Smtc.IsEnabled = true;
         Updater.MusicProperties.Title = newItem.Name;
         Updater.MusicProperties.Artist = newItem.ArtistsString;
         Updater.MusicProperties.AlbumTitle = newItem.Album.Name;
+        Updater.Update();
         TimelineProperties.MaxSeekTime = newItem.Duration;
+        Smtc.UpdateTimelineProperties(TimelineProperties);
         Updater.Thumbnail = RandomAccessStreamReference.CreateFromStream(await newItem.Album.GetCoverImageStream());
+        Updater.Update();
     }
 
     public void OnPlay()
