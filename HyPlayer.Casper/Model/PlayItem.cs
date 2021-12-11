@@ -13,6 +13,7 @@ public class ProvidableItem
     public string Name;
     public string PlaySourceType;
     public string ProviderId;
+    public ProvidableItemType Type;
 
     public ProvidableItem(string id)
     {
@@ -34,6 +35,13 @@ public class ProvidableItem
 
     public string Id => ProviderId + PlaySourceType + ActualId;
     public string InProviderId => PlaySourceType + ActualId;
+}
+
+public enum ProvidableItemType
+{
+    Single, // 单曲
+    SongContainer, // 歌曲容器 (内容仅为歌曲)
+    MixedContent, // 混合内容 (包含歌曲和歌单)
 }
 
 public class SongContainer : ProvidableItem

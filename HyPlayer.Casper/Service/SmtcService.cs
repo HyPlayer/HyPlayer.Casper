@@ -24,10 +24,10 @@ public class SmtcService
 
     public event PlayPositionChangingEvent OnPlayPositionChanging;
 
-
-    public void InitializeService()
+    public void InitializeService(IntPtr windowHandle)
     {
-        Smtc = SystemMediaTransportControls.GetForCurrentView();
+        if (windowHandle == IntPtr.Zero) Smtc = SystemMediaTransportControls.GetForCurrentView();
+        else Smtc = SystemMediaTransportControlsInterop.GetForWindow(windowHandle);
         Updater = Smtc.DisplayUpdater;
         Updater.Type = MediaPlaybackType.Music;
         Smtc.UpdateTimelineProperties(TimelineProperties);

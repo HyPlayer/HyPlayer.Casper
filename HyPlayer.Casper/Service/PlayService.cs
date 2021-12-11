@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Windows.Devices.Enumeration;
 using Windows.Media.Audio;
 using Windows.Media.Core;
 using HyPlayer.Casper.Annotations;
@@ -17,17 +19,17 @@ public abstract class PlayService
     public string LastError; // Win32 时代的产物
     public string Name;
     public PlayServiceStatus Status;
+    public ObservableCollection<PlayServiceOutgoingDeviceInfo> OutgoingDevices;
 
-    public abstract void InitializeService();
+    public abstract Task<bool> InitializeService();
     public abstract Task<bool> Load(MediaSource mediaSource);
-    public abstract void Play();
-    public abstract void Pause();
-    public abstract void Stop();
-    public abstract void Seek(TimeSpan timeSpan);
-    public abstract void ChangeOutputDevice(AudioDeviceOutputNode audioDeviceOutputNode);
-    public abstract void ChangeVolume(int volume);
-    public abstract void ChangePlaybackRate(int rate);
-    public abstract void SwitchBackground();
+    public abstract Task Play();
+    public abstract Task Pause();
+    public abstract Task Stop();
+    public abstract Task Seek(TimeSpan timeSpan);
+    public abstract Task<bool> ChangeOutputDevice(PlayServiceOutgoingDeviceInfo device);
+    public abstract Task<bool> RefreshOutputDevice();
+    public abstract Task<bool> SwitchBackground();
 }
 
 public abstract class EffectivePlayService : PlayService // 这个命名好好想想
@@ -36,7 +38,7 @@ public abstract class EffectivePlayService : PlayService // 这个命名好好�
     public EqualizerEffectDefinition EqEffectDefinition;
     public LimiterEffectDefinition LimiterEffectDefinition;
     public ReverbEffectDefinition ReverbEffectDefinition;
-    public abstract void InitializeEffect();
+    public abstract Task<bool> InitializeEffect();
 }
 
 public class PlayServiceAbility
@@ -50,6 +52,13 @@ public class PlayServiceAbility
     public bool PlayBackground; // 后台播放
     public bool Seek; // 切换时长
     public bool Stop; // 停止歌曲 (卸载歌曲)
+}
+
+public class PlayServiceOutgoingDeviceInfo
+{
+    public string DeviceId;
+    public string Name;
+    public DeviceInformation NativeDevice;
 }
 
 public enum PlayingStatus
@@ -109,6 +118,7 @@ public class PlayServiceStatus : INotifyPropertyChanged
         set
         {
             _volume = value;
+            OnVolumeChanged?.Invoke(value);
             OnPropertyChanged();
         }
     }
@@ -129,6 +139,7 @@ public class PlayServiceStatus : INotifyPropertyChanged
         set
         {
             _playbackRate = value;
+            OnPlayBackRateChanged?.Invoke(value);
             OnPropertyChanged();
         }
     }
@@ -140,4 +151,12 @@ public class PlayServiceStatus : INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    public delegate void VolumeChangedEventHandler(int volume);
+
+    public event VolumeChangedEventHandler OnVolumeChanged;
+
+    public delegate void PlaybackRateChangedEventHandler(int playbackRate);
+
+    public event PlaybackRateChangedEventHandler OnPlayBackRateChanged;
 }

@@ -120,17 +120,21 @@ public sealed class PlayCore : DependencyObject
 
     #region Basic Public Function
 
-    public PlayCore()
+    public PlayCore(IntPtr windowHandle)
     {
         // Select PlayService
         // TODO: Allow User To Select Which Service To Use
         PlayService = PlayServices[PlayServices.Keys.First()];
         PlayService.InitializeService();
         PlayService.Events = Events;
+#if DEBUG
+        if (true)
+#else
         if (PlayCoreSettings.SyncSmtc)
+#endif
         {
             SmtcService = new SmtcService();
-            SmtcService.InitializeService();
+            SmtcService.InitializeService(windowHandle);
             Events.OnPlayItemChanged += SmtcService.OnPlayItemChanged;
             Events.OnPlay += SmtcService.OnPlay;
             Events.OnPause += SmtcService.OnPause;
@@ -238,7 +242,7 @@ public sealed class PlayCore : DependencyObject
         if (index == NowPlayIndex)
         {
             PlayList.RemoveAt(index);
-            LoadNowPlayingItemMedia();
+            _ = LoadNowPlayingItemMedia();
         }
         else if (index < NowPlayIndex)
         {

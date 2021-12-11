@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
+using Windows.Devices.Enumeration;
 using Windows.Media.Audio;
 using Windows.Media.Core;
+using Windows.Media.Devices;
 using Windows.Media.Render;
 
 namespace HyPlayer.Casper.Service.PlayServices;
@@ -57,10 +60,21 @@ public sealed class AudioGraphService : EffectivePlayService
     }
 
 
-    private async void CreateAudioGraph()
+    private async Task CreateAudioGraph(DeviceInformation device = null)
     {
         // Create Audio Graph By Using The Default
+        if (_graph != null)
+        {
+            _graph.Dispose();
+            _graph = null;
+        }
+
         var settings = new AudioGraphSettings(AudioRenderCategory.Media);
+        if (device != null)
+        {
+            settings.PrimaryRenderDevice = device;
+        }
+
         var result = await AudioGraph.CreateAsync(settings);
         if (result.Status != AudioGraphCreationStatus.Success)
         {
@@ -79,11 +93,11 @@ public sealed class AudioGraphService : EffectivePlayService
         }
 
         _outputNode = outputDeviceNodeResult.DeviceOutputNode;
-        InitializeEffect();
+        await InitializeEffect();
         _graph.Start();
     }
 
-    public override void InitializeService()
+    public override async Task<bool> InitializeService()
     {
         Abilities = new PlayServiceAbility
         {
@@ -105,8 +119,14 @@ public sealed class AudioGraphService : EffectivePlayService
             Buffering = false,
             PlaybackRate = 10
         };
+        Status.OnVolumeChanged += (volume) => { _outputNode.OutgoingGain = (double)volume / 50; };
+        Status.OnPlayBackRateChanged += (rate) =>
+        {
+            if (_inputNode != null) _inputNode.PlaybackSpeedFactor = (double)rate / 10;
+        };
         _timer.Elapsed += TimerOnElapsed;
-        CreateAudioGraph();
+        await CreateAudioGraph();
+        return true;
     }
 
     public override async Task<bool> Load(MediaSource mediaSource)
@@ -144,63 +164,77 @@ public sealed class AudioGraphService : EffectivePlayService
         return true;
     }
 
-    public override void Play()
+    public override Task Play()
     {
         _inputNode.Start();
         Status.PlayStatus = PlayingStatus.Playing;
         _timer.Start();
         Events.RaisePlayEvent();
+        return Task.CompletedTask;
     }
 
-    public override void Pause()
+    public override Task Pause()
     {
         _inputNode.Stop();
         Status.PlayStatus = PlayingStatus.Paused;
         _timer.Stop();
         Events.RaisePauseEvent();
+        return Task.CompletedTask;
     }
 
-    public override void Stop()
+    public override Task Stop()
     {
         _inputNode.Reset();
         Status.PlayStatus = PlayingStatus.None;
         _timer.Stop();
         Events.RaiseStopEvent();
+        return Task.CompletedTask;
     }
 
-    public override void Seek(TimeSpan timeSpan)
+    public override Task Seek(TimeSpan timeSpan)
     {
         _inputNode?.Seek(timeSpan);
+        return Task.CompletedTask;
     }
 
-    public override void ChangeOutputDevice(AudioDeviceOutputNode audioDeviceOutputNode)
+    public override async Task<bool> ChangeOutputDevice(PlayServiceOutgoingDeviceInfo device)
     {
-        _inputNode?.RemoveOutgoingConnection(_outputNode);
-        _outputNode = audioDeviceOutputNode;
-        _inputNode?.AddOutgoingConnection(_outputNode);
+        Status.PlayStatus = PlayingStatus.Loading;
+        var source = _inputNode.MediaSource;
+        _inputNode?.Dispose();
+        _outputNode?.Dispose();
+        await CreateAudioGraph(device.NativeDevice);
+        await Load(source);
+        return true;
     }
 
-    public override void ChangeVolume(int volume)
+    public override async Task<bool> RefreshOutputDevice()
     {
-        _outputNode.OutgoingGain = (double)volume / 50;
-        Status.Volume = volume;
-    }
-
-    public override void ChangePlaybackRate(int rate) // 10 => 1.0 20 => 2.0
-    {
-        if (_inputNode != null)
+        OutgoingDevices.Clear();
+        var list = (await DeviceInformation.FindAllAsync(
+            MediaDevice.GetAudioRenderSelector())).Select(t =>
+            new PlayServiceOutgoingDeviceInfo
+            {
+                DeviceId = t.Id,
+                Name = t.Name,
+                NativeDevice = t
+            });
+        foreach (var playServiceOutgoingDeviceInfo in list)
         {
-            _inputNode.PlaybackSpeedFactor = (double)rate / 10;
-            Status.PlaybackRate = rate;
+            OutgoingDevices.Add(playServiceOutgoingDeviceInfo);
         }
+
+        return true;
     }
 
-    public override void SwitchBackground()
+
+    public override Task<bool> SwitchBackground()
     {
         // No thing for it
+        return Task.FromResult(true);
     }
 
-    public override void InitializeEffect()
+    public override Task<bool> InitializeEffect()
     {
         // Code From AudioCreation by Microsoft
         // https://github.com/microsoft/Windows-universal-samples/tree/main/Samples/AudioCreation
@@ -266,5 +300,6 @@ public sealed class AudioGraphService : EffectivePlayService
         EqEffectDefinition.Bands[3].Bandwidth = 2.0f;
         _outputNode.EffectDefinitions.Add(EqEffectDefinition);
         _outputNode.DisableEffectsByDefinition(EqEffectDefinition);
+        return Task.FromResult(true);
     }
 }
