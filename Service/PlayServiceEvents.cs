@@ -1,3 +1,4 @@
+using System;
 using HyPlayer.Casper.Model;
 
 namespace HyPlayer.Casper.Service;
@@ -35,7 +36,7 @@ public class PlayServiceEvents
     public event PositionChangedEvent OnPositionChanged;
     public event MediaEndEvent OnMediaEnd;
     public event MediaEndEvent OnMediaLoaded;
-    public event PlayItemChangingEvent OnPlayItemChanging;
+    [Obsolete] public event PlayItemChangingEvent OnPlayItemChanging;
     public event PlayItemChangedEvent OnPlayItemChanged;
     public event PlayListChangedEvent OnPlayListChanged;
     public event PlayListClearedEvent OnPlayListCleared;
@@ -76,6 +77,7 @@ public class PlayServiceEvents
         OnMediaLoaded?.Invoke();
     }
 
+    [Obsolete]
     public void RaisePlayItemChangingEvent(SingleSong newItem, SingleSong oldItem)
     {
         OnPlayItemChanging?.Invoke(newItem, oldItem);

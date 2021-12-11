@@ -11,7 +11,6 @@ using HyPlayer.Casper.Annotations;
 using HyPlayer.Casper.Model;
 using HyPlayer.Casper.Service;
 using HyPlayer.Casper.Service.PlayServices;
-using Microsoft.UI.Xaml;
 
 namespace HyPlayer.Casper;
 
@@ -133,10 +132,10 @@ public sealed class PlayCore : INotifyPropertyChanged
     [NotifyPropertyChangedInvocator]
     private void OnPropertyChanged([CallerMemberName] string propertyName = null)
     {
-        _ = MainWindow?.DispatcherQueue.TryEnqueue(() => { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); });
+        _ = CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () => { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); }
+        );
     }
-
-    public Window MainWindow;
 
 
     public static readonly Dictionary<string, PlayService> PlayServices = new()
@@ -150,14 +149,12 @@ public sealed class PlayCore : INotifyPropertyChanged
 
     #region Basic Public Function
 
-    public PlayCore(Window window)
+    public PlayCore(IntPtr windowHandle)
     {
-        MainWindow = window;
         // Select PlayService
         // TODO: Allow User To Select Which Service To Use
         PlayService = PlayServices[PlayServices.Keys.First()];
         PlayService.InitializeService();
-        PlayService.Status.MainWindow = MainWindow;
         PlayService.Events = Events;
 #if DEBUG
         if (true)
@@ -166,7 +163,6 @@ public sealed class PlayCore : INotifyPropertyChanged
 #endif
         {
             SmtcService = new SmtcService();
-            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(window);
             SmtcService.InitializeService(windowHandle);
             Events.OnPlayItemChanged += SmtcService.OnPlayItemChanged;
             Events.OnPlay += SmtcService.OnPlay;

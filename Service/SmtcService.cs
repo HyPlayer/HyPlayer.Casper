@@ -27,7 +27,9 @@ public class SmtcService
     public void InitializeService(IntPtr windowHandle)
     {
         if (windowHandle == IntPtr.Zero) Smtc = SystemMediaTransportControls.GetForCurrentView();
+#if WINUI_3_0
         else Smtc = SystemMediaTransportControlsInterop.GetForWindow(windowHandle);
+#endif
         Updater = Smtc.DisplayUpdater;
         Updater.Type = MediaPlaybackType.Music;
         Smtc.UpdateTimelineProperties(TimelineProperties);
