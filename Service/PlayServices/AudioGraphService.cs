@@ -46,7 +46,10 @@ public sealed class AudioGraphService : EffectivePlayService
     private AudioGraph _graph;
     private MediaSourceAudioInputNode _inputNode;
     private AudioDeviceOutputNode _outputNode;
+    private List<MediaSourceAudioInputNode> _nodes = new List<MediaSourceAudioInputNode>();
     private readonly double previousPositionMilliseconds = double.Epsilon;
+
+    private int _sortNodeCountDown = 4;
 
 
     private void TimerOnElapsed(object sender, ElapsedEventArgs e)
@@ -54,8 +57,14 @@ public sealed class AudioGraphService : EffectivePlayService
         // 检测进度变更
         if (Math.Abs(_inputNode.Position.TotalMilliseconds - previousPositionMilliseconds) > 0.01)
         {
-            Status.Position = _inputNode.Position;
+            Status.InternalPosition = _inputNode.Position;
             Events.RaisePositionChangedEvent();
+        }
+        // 播放整流
+        if (_sortNodeCountDown-- <= 0)
+        {
+            _sortNodeCountDown = 4;
+            SortNodes();
         }
     }
 
@@ -114,6 +123,7 @@ public sealed class AudioGraphService : EffectivePlayService
         Status = new PlayServiceStatus
         {
             PlayStatus = PlayingStatus.None,
+            InternalPosition = TimeSpan.Zero,
             Position = TimeSpan.Zero,
             Volume = 50,
             Buffering = false,
@@ -124,6 +134,7 @@ public sealed class AudioGraphService : EffectivePlayService
         {
             if (_inputNode != null) _inputNode.PlaybackSpeedFactor = (double)rate / 10;
         };
+        Status.OnPositionChanged += position => { _inputNode?.Seek(position); };
         _timer.Elapsed += TimerOnElapsed;
         await CreateAudioGraph();
         return true;
@@ -138,10 +149,14 @@ public sealed class AudioGraphService : EffectivePlayService
             return false;
         }
 
-        if (_inputNode != null)
+        if (_inputNode?.MediaSource != null)
+        {
             // 如果 InputNode 已经有过, 需要将其释放
             // 如果上一个文件正在播放需要将其停止
             _inputNode.Dispose();
+            _nodes.Remove(_inputNode);
+        }
+
 
         Status.Buffering = true;
         Status.PlayStatus = PlayingStatus.Loading;
@@ -156,6 +171,8 @@ public sealed class AudioGraphService : EffectivePlayService
 
         _inputNode = res.Node;
         _inputNode.Stop();
+        _nodes.Add(res.Node);
+        Status.Duration = _inputNode.Duration;
         _inputNode.AddOutgoingConnection(_outputNode);
         _inputNode.MediaSourceCompleted += (_, _) => Events.RaiseMediaEndEvent();
         Status.Buffering = false;
@@ -166,6 +183,11 @@ public sealed class AudioGraphService : EffectivePlayService
 
     public override Task Play()
     {
+        if (_inputNode?.MediaSource == null)
+        {
+            Status.PlayStatus = PlayingStatus.None;
+            return Task.CompletedTask;
+        }
         _inputNode.Start();
         Status.PlayStatus = PlayingStatus.Playing;
         _timer.Start();
@@ -175,6 +197,11 @@ public sealed class AudioGraphService : EffectivePlayService
 
     public override Task Pause()
     {
+        if (_inputNode?.MediaSource == null)
+        {
+            Status.PlayStatus = PlayingStatus.None;
+            return Task.CompletedTask;
+        }
         _inputNode.Stop();
         Status.PlayStatus = PlayingStatus.Paused;
         _timer.Stop();
@@ -184,17 +211,20 @@ public sealed class AudioGraphService : EffectivePlayService
 
     public override Task Stop()
     {
-        _inputNode.Reset();
+        SortNodes();
+        if (_inputNode?.MediaSource != null)
+            _inputNode.Dispose();
+        _nodes.Where(t => t.MediaSource != null).ToList().ForEach(node => { _nodes.Remove(node); node.Dispose(); });
         Status.PlayStatus = PlayingStatus.None;
         _timer.Stop();
         Events.RaiseStopEvent();
         return Task.CompletedTask;
     }
 
-    public override Task Seek(TimeSpan timeSpan)
+    private async void SortNodes()
     {
-        _inputNode?.Seek(timeSpan);
-        return Task.CompletedTask;
+        if (_nodes.Count > 1)
+            _nodes.Where(t => t != _inputNode).ToList().ForEach(node => { if (node.MediaSource != null) node.Dispose(); _nodes.Remove(node); });
     }
 
     public override async Task<bool> ChangeOutputDevice(PlayServiceOutgoingDeviceInfo device)

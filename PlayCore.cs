@@ -156,11 +156,8 @@ public sealed class PlayCore : INotifyPropertyChanged
         PlayService = PlayServices[PlayServices.Keys.First()];
         PlayService.InitializeService();
         PlayService.Events = Events;
-#if DEBUG
-        if (true)
-#else
+
         if (PlayCoreSettings.SyncSmtc)
-#endif
         {
             SmtcService = new SmtcService();
             SmtcService.InitializeService(windowHandle);
@@ -173,7 +170,7 @@ public sealed class PlayCore : INotifyPropertyChanged
                 if (next) this.MoveNextAndPlay();
                 else this.MovePreviousAndPlay();
             };
-            SmtcService.OnPlayPositionChanging += position => PlayService.Seek(position);
+            SmtcService.OnPlayPositionChanging += position => PlayService.Status.Position = position;
             SmtcService.OnPlayStateChanging += status =>
             {
                 switch (status)
@@ -444,8 +441,8 @@ public sealed class PlayCore : INotifyPropertyChanged
 
 public class PlayCoreSettings
 {
-    public bool SyncSmtc; // 同步 SMTC
-    public bool SyncSmtcTime; // 同步 SMTC 的时间属性
+    public bool SyncSmtc = true; // 同步 SMTC
+    public bool SyncSmtcTime = true; // 同步 SMTC 的时间属性
 }
 
 public enum PlayRollMode

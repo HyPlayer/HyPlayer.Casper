@@ -28,7 +28,6 @@ public abstract class PlayService
     public abstract Task Play();
     public abstract Task Pause();
     public abstract Task Stop();
-    public abstract Task Seek(TimeSpan timeSpan);
     public abstract Task<bool> ChangeOutputDevice(PlayServiceOutgoingDeviceInfo device);
     public abstract Task<bool> RefreshOutputDevice();
     public abstract Task<bool> SwitchBackground();
@@ -83,6 +82,8 @@ public class PlayServiceStatus : INotifyPropertyChanged
     private TimeSpan _position;
     private int _volume;
 
+    public bool NoPropertyChanged = false;
+
     public PlayingStatus PlayStatus
     {
         get => _playStatus;
@@ -93,6 +94,15 @@ public class PlayServiceStatus : INotifyPropertyChanged
         }
     }
 
+    public TimeSpan InternalPosition
+    {
+        get => _position;
+        set
+        {
+            _position = value;
+            OnPropertyChanged(nameof(Position));
+        }
+    }
 
     public TimeSpan Position
     {
@@ -100,6 +110,7 @@ public class PlayServiceStatus : INotifyPropertyChanged
         set
         {
             _position = value;
+            OnPositionChanged?.Invoke(value);
             OnPropertyChanged();
         }
     }
@@ -151,9 +162,10 @@ public class PlayServiceStatus : INotifyPropertyChanged
     [NotifyPropertyChangedInvocator]
     protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
     {
-        _ = CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
-            () => { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); }
-        );
+        if (!NoPropertyChanged)
+            _ = CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                () => { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); }
+            );
     }
 
     public delegate void VolumeChangedEventHandler(int volume);
@@ -163,4 +175,8 @@ public class PlayServiceStatus : INotifyPropertyChanged
     public delegate void PlaybackRateChangedEventHandler(int playbackRate);
 
     public event PlaybackRateChangedEventHandler OnPlayBackRateChanged;
+
+    public delegate void PositionChangedEventHandler(TimeSpan position);
+
+    public event PositionChangedEventHandler OnPositionChanged;
 }

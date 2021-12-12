@@ -63,6 +63,7 @@ public class SmtcService
     public void OnPlayPositionChanged(TimeSpan timeSpan)
     {
         TimelineProperties.Position = timeSpan;
+        Smtc.UpdateTimelineProperties(TimelineProperties);
     }
 
     public async void OnPlayItemChanged(SingleSong newItem, SingleSong previousItem)
@@ -76,6 +77,7 @@ public class SmtcService
         Updater.MusicProperties.Artist = newItem.ArtistsString;
         Updater.MusicProperties.AlbumTitle = newItem.Album.Name;
         Updater.Update();
+        TimelineProperties.EndTime = newItem.Duration;
         TimelineProperties.MaxSeekTime = newItem.Duration;
         Smtc.UpdateTimelineProperties(TimelineProperties);
         Updater.Thumbnail = RandomAccessStreamReference.CreateFromStream(await newItem.Album.GetCoverImageStream());
