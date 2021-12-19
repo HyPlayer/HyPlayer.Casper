@@ -134,7 +134,7 @@ public sealed class AudioGraphService : EffectivePlayService
         {
             if (_inputNode != null) _inputNode.PlaybackSpeedFactor = (double)rate / 10;
         };
-        Status.OnPositionChanged += position => { _inputNode?.Seek(position); };
+        Status.OnPositionChanged += position => { if (_inputNode?.MediaSource != null) _inputNode?.Seek(position); };
         _timer.Elapsed += TimerOnElapsed;
         await CreateAudioGraph();
         return true;
